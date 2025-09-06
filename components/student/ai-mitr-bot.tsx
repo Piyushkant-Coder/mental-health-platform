@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import axios from "axios"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,28 +43,35 @@ export function AIMitrBot() {
     setInputMessage("")
     setIsTyping(true)
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/aimitr-chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: inputMessage }),
+      })
+      const data = await res.json()
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: generateBotResponse(inputMessage),
+        content: data.reply || "Sorry, I couldn't process that.",
         sender: "bot",
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, botResponse])
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 2).toString(),
+          content: "Sorry, there was an error connecting to AI Mitr.",
+          sender: "bot",
+          timestamp: new Date(),
+        },
+      ])
+    } finally {
       setIsTyping(false)
-    }, 1500)
-  }
-
-  const generateBotResponse = (userInput: string): string => {
-    const responses = [
-      "I understand how you're feeling. It's completely normal to experience these emotions. Would you like to talk more about what's been on your mind?",
-      "Thank you for sharing that with me. It takes courage to open up about your feelings. What do you think might help you feel better right now?",
-      "I hear you, and your feelings are valid. Sometimes it helps to take things one step at a time. What's one small thing you could do today to take care of yourself?",
-      "That sounds challenging. Remember that it's okay to not be okay sometimes. Have you tried any coping strategies that have helped you in the past?",
-      "I'm glad you're reaching out for support. That's a positive step. Would you like me to suggest some mindfulness exercises or breathing techniques that might help?",
-    ]
-    return responses[Math.floor(Math.random() * responses.length)]
+    }
   }
 
   const quickPrompts = [
@@ -71,8 +79,7 @@ export function AIMitrBot() {
     "I'm having trouble sleeping",
     "I feel overwhelmed with coursework",
     "I'm feeling lonely",
-    "I need help with stress management",
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -114,11 +121,12 @@ export function AIMitrBot() {
                     </div>
                   )}
                   <div
-                    className={`max-w-[70%] p-3 rounded-lg ${
+                    className={`max-w-[70%] p-3 rounded-lg overflow-auto ${
                       message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
                     }`}
+                    style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
                   >
-                    <p className="text-sm">{message.content}</p>
+                    <p className="text-sm" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>{message.content}</p>
                     <p className="text-xs opacity-70 mt-1">
                       {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </p>
